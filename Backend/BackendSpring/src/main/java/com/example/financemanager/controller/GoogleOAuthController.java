@@ -9,7 +9,6 @@ import java.io.IOException;
 
 @Controller
 public class GoogleOAuthController {
-
     @Autowired
     private GoogleAuthorizationCodeFlow googleAuthorizationCodeFlow;
 

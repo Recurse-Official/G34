@@ -36,6 +36,7 @@ public class GoogleDriveConfig {
                 JSON_FACTORY,
                 new InputStreamReader(in)
         );
+        System.out.println(clientSecrets);
 
 
         return new GoogleAuthorizationCodeFlow.Builder(
@@ -44,15 +45,20 @@ public class GoogleDriveConfig {
                 clientSecrets,
                 Collections.singletonList(DriveScopes.DRIVE)
         ).setAccessType("offline").build();
+
     }
 
     @Bean
     public Drive googleDriveService(GoogleAuthorizationCodeFlow flow) throws Exception {
-        return new Drive.Builder(
+        Drive builder = new Drive.Builder(
                 GoogleNetHttpTransport.newTrustedTransport(),
                 JSON_FACTORY,
-                null // To be set after OAuth process
+                null
         ).setApplicationName("YourAppName").build();
+
+        System.out.println("Builder is: " + builder.files().toString());
+
+        return builder;
     }
 }
 
