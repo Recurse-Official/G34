@@ -1,4 +1,4 @@
-package com.example.financemanager;
+package com.example.financemanager.controller;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Controller;
@@ -12,5 +12,3 @@ public class HelloController {
         return "Hello";
     }
 }
-
-
