@@ -7,18 +7,43 @@ const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 const prompt=`
 parse the transaction message and reply in the format:
-"transactionID,credit,amount,category,date,2ndParty"
+"transactionID,credit,amount,category,time,date,2ndParty"
 Where:
 "transactionID" is the RefNo, transactionId
-"credit" is true if we got money false if we gave money
+"credit" is Credit if we got money Debit if we gave money
 "amount" is the amount of money transacted in
 "category" is the category of transaction: (grocery, etc.)
+"time" is the time of transaction in the format HH:MM:SS
 "date" is the date of transaction in the format DD-MM-YYYY
 "2ndParty" is the other person involved in transaction
 Message Starts From the next line:
 If you cant discern a field reliably give "null"
 `
+app.post("/", async (req, res)=>{
+  const { messages } = req.body;
+  let parsedMessages = [];
+  for (let message of messages){
+    console.log("yes");
+    const reply = await model.generateContent(prompt+message);
+    const tempArray = reply.response.text().trim().split(',');
+    const parsedMessage = {
+      "ID" : tempArray[0],
+      "Type" : tempArray[1],
+      "Amount" : Number(tempArray[2]),
+      "Category" : tempArray[3],
+      "Time" : tempArray[4],
+      "Date" : tempArray[5],
+      "2ndParty" : tempArray[6]
+    };
+    parsedMessages.push(parsedMessage);
+  }
+  console.log(parsedMessages);
+  res.json({
+    parsedMessages
+  });
+});
 
-const message = "Dear UPI user A/C X8147 debited by 20.0 on date 20Nov24 trf to CMR ENGINEERING Refno 432554849988. If not u? call 1800111109. -SBI"
-const result = await model.generateContent(prompt+message);
-console.log(result.response.text());
+const port = 1800
+app.listen(port, () => {
+  console.log("Listening on ", port);
+});
