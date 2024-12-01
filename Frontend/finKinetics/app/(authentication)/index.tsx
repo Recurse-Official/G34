@@ -1,28 +1,85 @@
-import { Text, TouchableOpacity, StyleSheet } from "react-native";
+import { Alert, Button, Linking, Platform, Text, StyleSheet, ActivityIndicator, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import axios from "axios";
-import * as SecureStore from "expo-secure-store";
 import { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
+import * as Device from "expo-device";
+import * as Application from "expo-application";
+
+// Define the type for the URL event
+type URLEvent = {
+  url: 'https://153a-183-82-112-229.ngrok-free.app';
+};
 
 export default function SignIn() {
-  const [key, setKey] = useState(null);
-  const server_url = "http://192.168.184.154:3000/callback";
+  const [key, setKey] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const server_url = "https://153a-183-82-112-229.ngrok-free.app";
 
-  async function handleSignUp() {
+  const getDeviceId = async () => {
+    let deviceId: string;
+    if (Platform.OS === "ios") {
+      deviceId = (await Application.getIosIdForVendorAsync()) || "";
+    } else {
+      deviceId = Application.applicationId || "";
+    }
+    return deviceId || Device.modelId || Date.now().toString();
+  };
+
+  const handleDeepLink = ({ url }: URLEvent) => {
+    console.log("Received callback URL:", url);
     try {
-      const res = await axios.get(server_url);
-
-      if (res.data && res.data.token) {
-        await SecureStore.setItemAsync("user_id", res.data.token);
-        setKey(res.data.token);
-      } else {
-        console.error("No token in server response:", res.data);
+      const urlObj = new URL(url);
+      const token = urlObj.searchParams.get("token");
+      if (token) {
+        setKey(token);
       }
     } catch (error) {
+      console.error("Error parsing callback URL:", error);
+    }
+  };
+
+  useEffect(() => {
+    const subscription = Linking.addEventListener("url", handleDeepLink);
+
+    Linking.getInitialURL().then((url) => {
+      if (url) {
+        handleDeepLink({ url });
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  async function handleSignUp() {
+    setLoading(true); // Show loading indicator
+    try {
+      const deviceId = await getDeviceId();
+      const deviceName = Device.deviceName || Device.modelName || "Unknown Device";
+
+      const oauth_url =
+        `${server_url}?` +
+        `device_id=${encodeURIComponent(deviceId)}&` +
+        `device_name=${encodeURIComponent(deviceName)}`;
+
+      console.log("Opening URL:", oauth_url);
+
+      const canOpen = await Linking.canOpenURL(oauth_url);
+      if (!canOpen) {
+        throw new Error("Cannot open URL");
+      }
+
+      await Linking.openURL(oauth_url);
+    } catch (error) {
       console.error("Error during sign-in:", error);
-      alert("Sign-in failed. Please try again.");
+      Alert.alert(
+        "Sign In Error",
+        "Unable to open sign-in page. Please try again."
+      );
+    } finally {
+      setLoading(false); // Hide loading indicator
     }
   }
 
@@ -30,17 +87,18 @@ export default function SignIn() {
     if (key) {
       router.push("/messages");
     }
-  }, [key]);
+  }, [key, router]);
 
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Welcome To FinKinetic</Text>
       <Text style={styles.subtitle}>Track Your Expenses With Us</Text>
-      <TouchableOpacity style={styles.button} onPress={handleSignUp}>
-        <Text style={styles.buttonText}>
-          Click To Sign Up or Sign In With Google
-        </Text>
-      </TouchableOpacity>
+
+      {loading ? (
+        <ActivityIndicator size="large" color="#007BFF" style={styles.loading} />
+      ) : (
+        <Button title="Sign Up or Sign In" onPress={handleSignUp} color="#007BFF" />
+      )}
     </SafeAreaView>
   );
 }
@@ -58,6 +116,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#333",
     marginBottom: 16,
+    textAlign: "center",
   },
   subtitle: {
     fontSize: 16,
@@ -65,14 +124,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     textAlign: "center",
   },
-  button: {
-    padding: 10,
-    backgroundColor: "#424949",
-    borderRadius: 5,
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    textAlign: "center",
+  loading: {
+    marginTop: 20,
   },
 });
