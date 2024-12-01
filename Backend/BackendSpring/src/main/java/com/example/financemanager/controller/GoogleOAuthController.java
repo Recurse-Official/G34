@@ -18,5 +18,6 @@ public class GoogleOAuthController {
                 .setRedirectUri("http://localhost:8000/oauth2/callback")
                 .build();
         response.sendRedirect(authorizationUrl);
+        System.out.println("called");
     }
 }

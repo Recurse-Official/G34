@@ -14,12 +14,10 @@ public class DriveService {
     public String createFile(String accessToken, String fileName, String mimeType, String content) {
         RestTemplate restTemplate = new RestTemplate();
 
-        // File metadata
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("name", fileName);
         metadata.put("mimeType", mimeType);
 
-        // File content
         String boundary = "foo_bar_baz";
         StringBuilder body = new StringBuilder();
         body.append("--").append(boundary).append("\r\n");
