@@ -12,6 +12,7 @@
       "supportsTablet": true
     },
     "android": {
+      "permissions" : ["android.permission.READ_SMS"],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
